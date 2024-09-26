@@ -113,49 +113,56 @@
     <hr />
 
 	<table>
-    <colgroup>
-        <col span="1" style="width: 33.3%;">
-        <col span="1" style="width: 33.3%;">
-        <col span="1" style="width: 33.3%;">
-    </colgroup>
-	  <tr>
-		<td>Marker: 
-			<select id="index" name="reference" onchange="ChangeSelection()">
-			  <option value="0" selected>Marker 1</option>
-			  <option value="1" >Marker 2</option>
-			</select>
-		</td>
-		<td colspan="2" style="padding-left: 22px; color: grey;">Filename: <output type="text" name="name" id="name" onchange="namechanged()"></td>
-	  </tr>
-	  <tr>
-		<td style="padding-top: 10px">x: <input type="number" name="refx" id="refx" step=1 onchange="valuemanualchanged()"></td>
-		<td style="padding-top: 10px">dx: <input type="number" name="refdx" id="refdx" step=1 onchange="valuemanualchanged()"></td>
-		<td rowspan="2" style="padding-top: 10px;"><input class="button" type="button" value="Update Marker" onclick="CutOutReference()"></td>	
-	  </tr>
-	  <tr>
-		<td>y: <input type="number" name="refy" id="refy" step=1 onchange="valuemanualchanged()"></td>
-		<td>dy: <input type="number" name="refdy" id="refdy" step=1 onchange="valuemanualchanged()"></td>
-	  </tr>
-	  <tr>
-		<td style="vertical-align: bottom;">Selected Image Area:</td>
-		<td style="vertical-align: bottom;">Resulting Marker:</td>
-        <td><input class="button" type="button" id="enhancecontrast" value="Enhance Image Contrast" onclick="EnhanceContrast()"></td>	
-	  </tr> 
-	  <tr>
-		<td style="height:70px; vertical-align: top;"><img id="img_ref_org" src = ""></td>    <!--/img_tmp/ref_zw_org.jpg-->
-		<td style="height:70px; vertical-align: top;"><img id="img_ref" src = ""></td>        <!--/img_tmp/ref_zw.jpg-->
-	  </tr> 
-        <tr>
-            <td style="vertical-align:bottom;"><b>Reference Image:</b></td>
-            <td></td>
-            <td><input style="font-weight:bold;" class="button" type="submit" name="saveroi" id="savemarker" onclick="SaveToConfig()" value="Save New Marker">
-            </td>
-        </tr> 
-        <tr>
-            <td colspan="3"><canvas id="canvas" crossorigin></canvas></td>
-        </tr>
-    </table>
-
+		<colgroup>
+			<col span="1" style="width: 33.3%;">
+			<col span="1" style="width: 33.3%;">
+			<col span="1" style="width: 33.3%;">
+		</colgroup>
+	
+		<tr>
+			<td>Marker: 
+				<select id="index" name="reference" onchange="ChangeSelection()">
+					<option value="0" selected>Marker 1</option>
+					<option value="1" >Marker 2</option>
+				</select>
+			</td>
+			<td colspan="2" style="padding-left: 22px; color: grey;">Filename: <output type="text" name="name" id="name" onchange="namechanged()"></td>
+		</tr>
+	  
+		<tr>
+			<td style="padding-top: 10px">x: <input type="number" name="refx" id="refx" step=1 onchange="valuemanualchanged()"></td>
+			<td style="padding-top: 10px">dx: <input type="number" name="refdx" id="refdx" step=1 onchange="valuemanualchanged()"></td>
+			<td rowspan="2" style="padding-top: 10px;"><button style="color:black;" type="button" class="button" id="updatemarker" onclick="CutOutReference()">Update Marker</button></td>	
+		</tr>
+	  
+		<tr>
+			<td>y: <input type="number" name="refy" id="refy" step=1 onchange="valuemanualchanged()"></td>
+			<td>dy: <input type="number" name="refdy" id="refdy" step=1 onchange="valuemanualchanged()"></td>
+		</tr>
+	  
+		<tr>
+			<td style="vertical-align: bottom;">Selected Image Area:</td>
+			<td style="vertical-align: bottom;">Resulting Marker:</td>
+			<td><button style="color:black;" type="button" class="button" id="enhancecontrast" onclick="EnhanceContrast()">Enhance Image Contrast</button></td>	
+		</tr> 
+	  
+		<tr>
+			<td style="height:70px; vertical-align: top;"><img id="img_ref_org" src = ""></td>    <!--/img_tmp/ref_zw_org.jpg-->
+			<td style="height:70px; vertical-align: top;"><img id="img_ref" src = ""></td>        <!--/img_tmp/ref_zw.jpg-->
+		</tr>
+	  
+		<tr>
+			<td style="vertical-align:bottom;"><b>Reference Image:</b></td>
+			<td></td>
+			<td>
+			    <button style="font-weight:bold; color:black;" type="submit" class="button" id="savemarker" onclick="SaveToConfig()">Save New Marker</button>
+			</td>
+		</tr>
+	  
+		<tr>
+			<td colspan="3"><canvas id="canvas" crossorigin></canvas></td>
+		</tr>
+	</table>
 
 <script type="text/javascript" src="common.js?v=$COMMIT_HASH"></script> 
 <script type="text/javascript" src="readconfigcommon.js?v=$COMMIT_HASH"></script>
@@ -173,11 +180,12 @@ var canvas = document.getElementById('canvas'),
     domainname = getDomainname(),
 	neueref1,
 	neueref2,
+	cofcat,	
     param;
     
 function doReboot() {
 	if (confirm("Are you sure you want to reboot? Did you save your changes?")) {
-        var stringota = getDomainname() + "/reboot";
+        var stringota = domainname + "/reboot";
         window.location = stringota;
         window.location.href = stringota;
         window.location.assign(stringota);
@@ -200,34 +208,60 @@ function ChangeSelection(){
 	}
 }
 
-function SaveToConfig(){
+function SaveToConfig() {
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById("overlaytext").innerHTML = "Save Alignment Marker...";
+
     if (confirm("Are you sure you want to save the new alignment marker configuration?")) {
-        WriteConfigININew();
+        function sleep(ms) {
+			return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function task() {
+			while (true) {
+			    WriteConfigININew();
 		
-		if (neueref1 == 1 && neueref2 == 1) {
-			UpdateConfigReferences(domainname);
-		}
-		
-		else if (neueref1 == 1) {
-			var anzneueref = 1;
-			UpdateConfigReference(anzneueref, domainname);
-		}
-		
-		else if (neueref2 == 1) {
-			var anzneueref = 2;
-			UpdateConfigReference(anzneueref, domainname);
-		}
-		
-        //UpdateConfigReference(domainname)
-        SaveConfigToServer(domainname);
-        document.getElementById("savemarker").disabled = true;
-        document.getElementById("enhancecontrast").disabled = true;
-        
-        firework.launch('Alignment marker saved. They will get applied after next reboot', 'success', 5000);
+			    if (neueref1 == 1 && neueref2 == 1) {
+			        UpdateConfigReferences(domainname);
+			    }
+			    else if (neueref1 == 1) {
+			        var anzneueref = 1;
+			        UpdateConfigReference(anzneueref, domainname);
+			    }
+			    else if (neueref2 == 1) {
+			        var anzneueref = 2;
+			        UpdateConfigReference(anzneueref, domainname);
+			    }
+
+			    SaveConfigToServer(domainname);
+				
+			    document.getElementById("updatemarker").disabled = false;
+			    // document.getElementById("savemarker").disabled = true;
+			    // document.getElementById("enhancecontrast").disabled = true;
+
+			    EnDisableItem(false, "savemarker", true);
+			    EnDisableItem(false, "enhancecontrast", true);
+
+			    document.getElementById("overlay").style.display = "none";
+			    firework.launch('Alignment marker saved. They will get applied after next reboot', 'success', 5000);
+			    return;
+			}
+        }
+
+        setTimeout(function () {
+			// Delay so the overlay gets shown
+			task();
+		}, 1);
+    }
+    else {
+		document.getElementById("overlay").style.display = "none";
     }
 }
 
-function EnhanceContrast(){
+function EnhanceContrast() {
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById("overlaytext").innerHTML = "Enhancing Image Contrast...";
+
     refInfo[aktindex]["name"] = document.getElementById("name").value;
     refInfo[aktindex]["x"] = document.getElementById("refx").value;
     refInfo[aktindex]["y"] = document.getElementById("refy").value; 
@@ -235,9 +269,7 @@ function EnhanceContrast(){
     refInfo[aktindex]["dy"] = document.getElementById("refdy").value;       
 
     var enhanceCon = true;
-
-    document.getElementById("overlay").style.display = "block";
-    document.getElementById("overlaytext").innerHTML = "Enhancing Image Contrast...";
+    var durchlaufe = 0;
 
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -245,11 +277,18 @@ function EnhanceContrast(){
 
     async function task() {
         while (true) {
+			if (durchlaufe > 10) {
+                document.getElementById("overlay").style.display = "none";
+                firework.launch('Enhancing Image Contrast aborted, timeout!', 'danger', 5000);
+                return;
+			}
+		
 			var ret = MakeRefImageZW(refInfo[aktindex], enhanceCon, domainname);
+			
         	if (ret) {
                 UpdateReference();
-                //document.getElementById("enhancecontrast").disabled = true;
                 document.getElementById("overlay").style.display = "none";
+				
 				if (aktindex == 0) {
 					neueref1 = 1;
 				}
@@ -261,6 +300,8 @@ function EnhanceContrast(){
             else {
                 // Get status
                 var xhttp = new XMLHttpRequest();
+                durchlaufe = durchlaufe + 1;
+				
                 try {
                     xhttp.open("GET", domainname + "/statusflow", false);
                     xhttp.send();
@@ -274,7 +315,8 @@ function EnhanceContrast(){
         }
     }
 
-    setTimeout(function() { // Delay so the overlay gets shown
+    setTimeout(function() { 
+        // Delay so the overlay gets shown
         task();
     }, 1);
 }
@@ -290,8 +332,7 @@ function UpdateReference(){
         draw();
     }
 
-    _filenameurl = refInfo[aktindex]["name"].replace("/config/", "/img_tmp/");
-
+    var _filenameurl = refInfo[aktindex]["name"].replace("/config/", "/img_tmp/");
     var url = domainname + "/fileserver" + _filenameurl + "?"  + Date.now();
     document.getElementById("img_ref").src = url;
 
@@ -352,7 +393,7 @@ function openDescription() {
     if(window.location.hash) {
         var hash = window.location.hash.substring(1); //Puts hash in variable, and removes the # character
         if(hash == 'description') {
-            document.getElementById("desc_details").open = true;
+            document.getElementById("desc_details").open = false;
 		}
     }
 }
@@ -368,7 +409,7 @@ function LoadReference(){
         draw();
     }
 
-    _filenameurl = refInfo[aktindex]["name"];
+    var _filenameurl = refInfo[aktindex]["name"];
     var url = domainname + "/fileserver" + _filenameurl + "?"  + Date.now();
     document.getElementById("img_ref").src = url;
 	
@@ -386,25 +427,33 @@ function LoadReference(){
 	
 function init() {
     openDescription();
-    domainname = getDomainname();
-    loadConfig(domainname); 
+	
+    document.getElementById("updatemarker").disabled = false;
+    // document.getElementById("savemarker").disabled = true;
+    // document.getElementById("enhancecontrast").disabled = true;
+
+    EnDisableItem(false, "savemarker", true);
+    EnDisableItem(false, "enhancecontrast", true);
+
+    if (!loadConfig(domainname)) {
+		firework.launch('Configuration could not be loaded! Please reload the page!', 'danger', 30000);
+		return;
+    }
+
     ParseConfig();
     param = getConfigParameters();
-
-    document.getElementById("savemarker").disabled = true;
-    document.getElementById("enhancecontrast").disabled = true;
+	cofcat = getConfigCategory();
 
     canvas.addEventListener('mousedown', mouseDown, false);
     canvas.addEventListener('mouseup', mouseUp, false);
     canvas.addEventListener('mousemove', mouseMove, false);
-    loadCanvas(domainname + "/fileserver/config/reference.jpg");
+    loadCanvas(domainname + "/fileserver/config/reference.jpg");	
 
-    //CopyReferenceToImgTmp(domainname);
     refInfo = GetReferencesInfo();
 
-    //UpdateReference();
 	LoadReference();
     drawImage();
+	draw();
 }
 
 function drawImage(){
@@ -418,15 +467,16 @@ function drawImage(){
 }  
 
 function CutOutReference(){
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById("overlaytext").innerHTML = "Updating marker...";
+
     refInfo[aktindex]["x"] = document.getElementById("refx").value;
     refInfo[aktindex]["y"] = document.getElementById("refy").value; 
     refInfo[aktindex]["dx"] = document.getElementById("refdx").value;
     refInfo[aktindex]["dy"] = document.getElementById("refdy").value;
 
 	var enhanceCon = false;
-
-    document.getElementById("overlay").style.display = "block";
-    document.getElementById("overlaytext").innerHTML = "Updating marker...";
+	var durchlaufe = 0;
 
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -434,12 +484,24 @@ function CutOutReference(){
 
     async function task() {
         while (true) {
+			if (durchlaufe > 10) {
+                document.getElementById("overlay").style.display = "none";
+                firework.launch('Updating marker aborted, timeout!', 'danger', 5000);
+                return;
+			}
+
 			var ret = MakeRefImageZW(refInfo[aktindex], enhanceCon, domainname);
             
 			if (ret) {
                 UpdateReference();
-                document.getElementById("enhancecontrast").disabled = false;
-                document.getElementById("savemarker").disabled = false;
+				
+                document.getElementById("updatemarker").disabled = false;
+                // document.getElementById("savemarker").disabled = false;
+                // document.getElementById("enhancecontrast").disabled = false;
+
+                EnDisableItem(true, "savemarker", true);
+                EnDisableItem(true, "enhancecontrast", true);
+				
                 document.getElementById("overlay").style.display = "none";
 				
 				if (aktindex == 0) {
@@ -453,6 +515,8 @@ function CutOutReference(){
             else {
                 // Get status
                 var xhttp = new XMLHttpRequest();
+                durchlaufe = durchlaufe + 1;
+				
                 try {
                     xhttp.open("GET", domainname + "/statusflow", false);
                     xhttp.send();
@@ -466,7 +530,8 @@ function CutOutReference(){
         }
     }
 
-    setTimeout(function() { // Delay so the overlay gets shown
+    setTimeout(function() { 
+        // Delay so the overlay gets shown
         task();
     }, 1);
 }
@@ -520,6 +585,21 @@ function mouseDown(e) {
     document.getElementById("refx").value =  rect.startX;
     document.getElementById("refy").value =  rect.startY;    
     drag = true;
+}
+
+function EnDisableItem(_status, _name, _optional) {
+    _color = "rgb(122, 122, 122)";
+
+    if (_status) {
+        _color = "black";
+    }
+
+    if (_optional) {
+        document.getElementById(_name).disabled = !_status;
+        document.getElementById(_name).style.color = _color;
+    }
+
+    document.getElementById(_name).style.color = _color;
 }
 
 function mouseUp() {
